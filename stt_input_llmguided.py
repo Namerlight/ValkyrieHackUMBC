@@ -7,8 +7,12 @@ import os
 import time
 import pydirectinput
 import get_controls
+import base64
+import configs
+import requests
 
 from screen_grab import grab_screen
+
 
 client = OpenAI(
     organization=org,
@@ -39,6 +43,51 @@ def keypress(key, press_time):
         press_time = "0.25"
     time.sleep(float(press_time))
     pydirectinput.keyUp(key)
+
+
+def encode_image(image_path):
+    with open(image_path, "rb") as image_file:
+        return base64.b64encode(image_file.read()).decode('utf-8')
+
+
+def generate_instructions(image_path, task):
+
+    base64_image = encode_image(image_path)
+
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {configs.api_key}"
+    }
+
+    prompt = f"""You are instructing a person on how to play a video game. You must be concise and accurate. The player's task is to {task}. 
+    Give the player instructions on how to accomplish the task based on the image given above. Do not say anything else other than the instructions. 
+    The instruction should be in the form of a sequence of action and duration, given in a very simple, short sentence such as "move forward" or "move left for three seconds and then go forwards for five seconds".
+    """
+
+    payload = {
+        "model": "gpt-4o",
+        "messages": [
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": f"data:image/jpeg;base64,{base64_image}"
+                        }
+                    },
+                    {
+                        "type": "text",
+                        "text": prompt
+                    }
+                ]
+            }
+        ],
+        "max_tokens": 200
+    }
+    response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=payload)
+
+    return response.json()['choices'][0]['message']['content']
 
 
 def convert(spoken_inp, control_scheme_file):
@@ -73,6 +122,7 @@ while True:
     result = mic.listen()
     print(result)
 
+
     if "controls" in result:
         grab_screen()
         path = os.path.join("temp_imgs", "current_image.jpeg")
@@ -82,6 +132,11 @@ while True:
 
     op = convert(result, os.path.join("temp_controls", "control_schema.txt"))
     print(op)
+
+    grab_screen()
+
+    llm_instructions = generate_instructions(task=result, image_path=os.path.join("temp_imgs", "current_image.jpeg"))
+    print(llm_instructions)
 
     list_of_commands = [item.strip() for item in op.split("\n")]
     print(list_of_commands)
@@ -94,3 +149,9 @@ while True:
                 keypress(parsed[0], parsed[1])
         else:
             keypress(parsed[0], parsed[1])
+
+
+
+
+
+

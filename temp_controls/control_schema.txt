@@ -1,0 +1,11 @@
+Move Forward: W
+Move Backward: S
+Move Left: A
+Move Right: D
+Switch to Walk/Run: Left Ctrl
+Normal Attack: Left Click
+Elemental Skill: E
+Elemental Burst: Q
+Sprint: Left Shift
+Switch Aiming Mode: R
+Jump: Space
