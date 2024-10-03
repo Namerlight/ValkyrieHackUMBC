@@ -25,6 +25,5 @@ If you do not run this in administrator mode, commands may not register in many 
 
 ## Credits
 
-Shadab Choudhury
-Naren Sivakumar
+Shadab Choudhury & Naren Sivakumar
 
